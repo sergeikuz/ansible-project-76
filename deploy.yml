@@ -1,15 +1,16 @@
-- hosts: all
+- name: Deploy Redmine
+  hosts: all
   become: true
 
   tasks:
     - name: Create redmine directory
-      file:
+      ansible.builtin.file:
         path: /opt/redmine
         state: directory
         mode: '0755'
 
     - name: Create .env file from template
-      template:
+      ansible.builtin.template:
         src: templates/redmine.env.j2
         dest: /opt/redmine/.env
         mode: '0644'
@@ -18,7 +19,7 @@
       community.docker.docker_container:
         name: redmine
         state: absent
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Run redmine container
       community.docker.docker_container:
