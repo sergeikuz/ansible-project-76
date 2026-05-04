@@ -39,6 +39,50 @@
 - **HTTP-роутер:** test-http-router (маршрут `/` → backend group)
 - **L7-балансировщик:** test-load-balancer (обработчик на порту 80)
 
+### Группы безопасности
+
+| Имя | ID | Назначение | Правила |
+|-----|----|------------|---------|
+| db-sg | enpi4tpapao3g0a42tca | PostgreSQL кластер | Входящий 5432 только из 10.129.0.0/24 и 10.130.0.0/24 |
+
+### Кластер PostgreSQL
+
+| Параметр | Значение |
+|----------|----------|
+| Имя | postgresql710 |
+| Версия | PostgreSQL 16 |
+| Среда | PRODUCTION |
+| Пресет | c3-c2-m4 (2 vCPU, 4 GB RAM) |
+| Диск | network-ssd, 10 GB |
+| БД | db1 (владелец: user1) |
+| Статус | RUNNING |
+
+**Хосты:**
+
+| # | Зона | Подсеть |
+|---|------|---------|
+| 1 | ru-central1-b | default-ru-central1-b |
+| 2 | ru-central1-d | default-ru-central1-d |
+
+**Безопасность:**
+- Группа безопасности: `db-sg` (enpi4tpapao3g0a42tca)
+- Доступ к порту 5432 разрешён только из подсети ВМ (`10.129.0.0/24`)
+- Репликация между хостами через `10.130.0.0/24`
+- Защита от удаления: включена
+- Бэкапы: ежедневно 22:00-23:00 UTC, хранение 7 дней
+
+### DNS и домен
+
+| Параметр | Значение |
+|----------|----------|
+| Домен | sergei3333.ru |
+| Регистратор | reg.ru |
+| DNS-зона | Yandex Cloud DNS (dnsd7n740bd9ptvh1n4v) |
+| NS-серверы | ns1.yandexcloud.net, ns2.yandexcloud.net |
+| A-запись | sergei3333.ru → 111.88.146.158 |
+
+**Делегирование:** домен делегирован на Yandex Cloud DNS через reg.ru
+
 ## Подключение к ВМ
 
 ### Через SSH-конфиг (рекомендуется)
@@ -70,20 +114,82 @@ ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.145.247
 - [x] Балансировщик распределяет трафик между двумя ВМ (порт 8080)
 - [x] Настроены health checks для бэкендов
 - [x] Протестирована работа балансировщика (curl → 200 OK)
+- [x] Создан кластер PostgreSQL 16 (2 хоста, ru-central1-b + ru-central1-d)
+- [x] Создана группа безопасности `db-sg` (доступ к БД только с ВМ)
+- [x] Зарегистрирован домен sergei3333.ru (reg.ru)
+- [x] Создана DNS-зона в Yandex Cloud DNS
+- [x] Добавлена A-запись (IP балансировщика)
+- [x] Домен делегирован на Yandex Cloud NS-серверы
 
 ## Следующие шаги
 
 - [ ] Установка Docker на обе ВМ (Ansible playbook)
 - [ ] Развёртывание приложения в Docker-контейнерах
-- [ ] Создание кластера PostgreSQL (Managed Service for PostgreSQL)
-- [ ] Настройка групп безопасности (alb-sg, vm-sg)
+- [ ] Создание групп безопасности для ALB и ВМ (alb-sg, vm-sg)
 - [ ] Настройка подключения приложения к БД
 - [ ] Автоматизация инфраструктуры через Ansible
 
-## Тестирование балансировщика
+## Тестирование
 
+### Балансировщик
 ```bash
 curl --verbose 111.88.146.158:80
 # HTTP/1.1 200 OK
 # server: ycalb
+```
+
+### Домен
+```bash
+dig sergei3333.ru +short
+# 111.88.146.158
+```
+
+## Деплой
+
+### Требования
+
+- Ansible 2.14+
+- Python 3.8+
+- SSH-ключ `~/.ssh/id_rsa` с доступом к серверам
+
+### Установка зависимостей
+
+```bash
+make prepare-packages
+```
+
+Или вручную:
+```bash
+ansible-galaxy role install -r requirements.yml
+ansible-galaxy collection install -r requirements.yml
+```
+
+### Подготовка серверов
+
+```bash
+make prepare-servers
+```
+
+Или вручную:
+```bash
+ansible-playbook playbook.yml -i inventory.ini
+```
+
+### Проверка подключения
+
+```bash
+ansible all -i inventory.ini -m ping
+```
+
+### Структура проекта
+
+```
+├── playbook.yml          # Основной плейбук
+├── inventory.ini         # Инвентаризация хостов
+├── requirements.yml      # Роли и коллекции Ansible Galaxy
+├── Makefile              # Команды для деплоя
+├── group_vars/
+│   ├── all/vars.yml      # Общие переменные
+│   └── webservers.yml    # Переменные для группы webservers
+└── README.md             # Документация
 ```
