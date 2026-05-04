@@ -1,0 +1,39 @@
+- hosts: all
+  become: true
+
+  vars_files:
+    - group_vars/all/vault.yml
+
+  tasks:
+    - name: Create redmine directory
+      file:
+        path: /opt/redmine
+        state: directory
+        mode: '0755'
+
+    - name: Create .env file from template
+      template:
+        src: templates/redmine.env.j2
+        dest: /opt/redmine/.env
+        mode: '0644'
+
+    - name: Stop existing redmine container
+      community.docker.docker_container:
+        name: redmine
+        state: absent
+      ignore_errors: yes
+
+    - name: Run redmine container
+      community.docker.docker_container:
+        name: redmine
+        image: redmine:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "{{ redmine_port }}:3000"
+        env:
+          REDMINE_DB_POSTGRES: "{{ db_host }}"
+          REDMINE_DB_PORT: "{{ db_port }}"
+          REDMINE_DB_USERNAME: "{{ db_user }}"
+          REDMINE_DB_PASSWORD: "{{ db_password }}"
+          REDMINE_DB_DATABASE: "{{ db_name }}"

@@ -1,2 +1,5 @@
-nginx_port: 8090
-root_dir: /var/tmp/www
+redmine_port: 8080
+db_host: rc1b-uej4gn9iuk0vk4ec.mdb.yandexcloud.net
+db_port: "6432"
+db_user: user1
+db_name: db1

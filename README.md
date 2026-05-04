@@ -7,7 +7,9 @@
 
 ## Статус проекта
 
-Инфраструктура Yandex Cloud создана и настроена. Балансировщик работает и распределяет трафик между двумя ВМ.
+Инфраструктура Yandex Cloud создана и настроена. Redmine развёрнут на двух ВМ, балансировщик распределяет трафик. Приложение доступно по домену.
+
+**Приложение:** http://sergei3333.ru
 
 ## Инфраструктура (Yandex Cloud)
 
@@ -30,7 +32,7 @@
 ### Application Load Balancer (L7)
 
 - **Публичный IP:** 111.88.146.158
-- **Порт:** 80 (HTTP)
+- **Порты:** 80 (HTTP), 443 (HTTPS — сертификат Let's Encrypt в процессе валидации)
 - **Статус:** работает, отвечает 200 OK
 
 Компоненты ALB:
@@ -43,7 +45,7 @@
 
 | Имя | ID | Назначение | Правила |
 |-----|----|------------|---------|
-| db-sg | enpi4tpapao3g0a42tca | PostgreSQL кластер | Входящий 5432 только из 10.129.0.0/24 и 10.130.0.0/24 |
+| db-sg | enpi4tpapao3g0a42tca | PostgreSQL кластер | Входящий 5432, 6432 только из 10.129.0.0/24 и 10.130.0.0/24 |
 
 ### Кластер PostgreSQL
 
@@ -115,21 +117,36 @@ ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.145.247
 - [x] Настроены health checks для бэкендов
 - [x] Протестирована работа балансировщика (curl → 200 OK)
 - [x] Создан кластер PostgreSQL 16 (2 хоста, ru-central1-b + ru-central1-d)
-- [x] Создана группа безопасности `db-sg` (доступ к БД только с ВМ)
+- [x] Создана группа безопасности `db-sg` (доступ к БД только с ВМ, порты 5432 + 6432)
 - [x] Зарегистрирован домен sergei3333.ru (reg.ru)
 - [x] Создана DNS-зона в Yandex Cloud DNS
 - [x] Добавлена A-запись (IP балансировщика)
 - [x] Домен делегирован на Yandex Cloud NS-серверы
+- [x] Установлен Docker на обе ВМ (Ansible playbook)
+- [x] Развёрнут Redmine в Docker-контейнерах на обеих ВМ
+- [x] Настроено подключение Redmine к PostgreSQL кластеру
+- [x] Создан Let's Encrypt сертификат для HTTPS (в процессе валидации)
 
 ## Следующие шаги
 
-- [ ] Установка Docker на обе ВМ (Ansible playbook)
-- [ ] Развёртывание приложения в Docker-контейнерах
+- [ ] Добавить HTTPS обработчик в ALB (после валидации сертификата)
+- [ ] Настроить редирект HTTP → HTTPS в HTTP-роутере
 - [ ] Создание групп безопасности для ALB и ВМ (alb-sg, vm-sg)
-- [ ] Настройка подключения приложения к БД
-- [ ] Автоматизация инфраструктуры через Ansible
 
 ## Тестирование
+
+### Приложение (Redmine)
+```bash
+# Напрямую на серверах
+curl http://111.88.147.207:8080  # server1
+curl http://111.88.145.247:8080  # server2
+
+# Через балансировщик
+curl http://111.88.146.158:80
+
+# По домену
+curl http://sergei3333.ru
+```
 
 ### Балансировщик
 ```bash
@@ -181,15 +198,31 @@ ansible-playbook playbook.yml -i inventory.ini
 ansible all -i inventory.ini -m ping
 ```
 
+### Деплой приложения (Redmine)
+
+```bash
+make deploy
+```
+
+Или вручную:
+```bash
+ansible-playbook deploy.yml -i inventory.ini --vault-password-file ~/.vault_pass
+```
+
 ### Структура проекта
 
 ```
-├── playbook.yml          # Основной плейбук
-├── inventory.ini         # Инвентаризация хостов
-├── requirements.yml      # Роли и коллекции Ansible Galaxy
-├── Makefile              # Команды для деплоя
+├── playbook.yml              # Плейбук подготовки серверов (Docker, pip)
+├── deploy.yml                # Плейбук деплоя Redmine
+├── inventory.ini             # Инвентаризация хостов
+├── requirements.yml          # Роли и коллекции Ansible Galaxy
+├── Makefile                  # Команды для деплоя
+├── templates/
+│   └── redmine.env.j2        # Шаблон .env для Redmine
 ├── group_vars/
-│   ├── all/vars.yml      # Общие переменные
-│   └── webservers.yml    # Переменные для группы webservers
-└── README.md             # Документация
+│   ├── all/
+│   │   ├── vars.yml          # Общие переменные
+│   │   └── vault.yml         # Зашифрованные переменные (db_password)
+│   └── webservers.yml        # Переменные для группы webservers
+└── README.md                 # Документация
 ```
