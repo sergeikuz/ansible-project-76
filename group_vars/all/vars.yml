@@ -1,0 +1,2 @@
+nginx_port: 8090
+root_dir: /var/tmp/www

@@ -1,0 +1,11 @@
+all:
+  children:
+    webservers:
+      hosts:
+        web1:
+          ansible_host: 111.88.147.207
+        web2:
+          ansible_host: 111.88.145.247
+      vars:
+        ansible_user: mrkuzy9999
+        ansible_ssh_private_key_file: ~/.ssh/id_rsa

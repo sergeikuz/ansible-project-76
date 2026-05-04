@@ -1,0 +1,8 @@
+roles:
+  - name: geerlingguy.git
+  - name: geerlingguy.postgresql
+  - name: geerlingguy.pip
+  - name: geerlingguy.docker
+
+collections:
+  - name: community.docker
