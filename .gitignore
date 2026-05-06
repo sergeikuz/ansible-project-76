@@ -44,3 +44,9 @@ typespec/node_modules/
 # Playwright
 test-results/
 playwright-report/
+
+# Ansible
+.vault_pass
+*.retry
+*.pyc
+.ansible/
