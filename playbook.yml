@@ -24,6 +24,7 @@
   become: true
 
   vars:
+    datadog_site: "us5.datadoghq.com"
     datadog_checks:
       http_check:
         instances:
