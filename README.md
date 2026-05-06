@@ -17,8 +17,8 @@
 
 | Имя | Внешний IP | Внутренний IP | Зона | Статус |
 |-----|------------|---------------|------|--------|
-| compute-vm-2-1-15-ssd-1777883033560 | 111.88.147.207 | 10.129.0.3 | ru-central1-b | RUNNING |
-| compute-vm-2-1-12-ssd-1777883153308 | 111.88.145.247 | 10.129.0.8 | ru-central1-b | RUNNING |
+| compute-vm-2-1-15-ssd-1777883033560 | 111.88.147.9 | 10.129.0.3 | ru-central1-b | RUNNING |
+| compute-vm-2-1-12-ssd-1777883153308 | 111.88.150.198 | 10.129.0.8 | ru-central1-b | RUNNING |
 
 - **OS:** Ubuntu 24.04 LTS
 - **Платформа:** standard-v4a (2 vCPU, 1 GB RAM)
@@ -85,13 +85,22 @@
 
 **Делегирование:** домен делегирован на Yandex Cloud DNS через reg.ru
 
+### Мониторинг (DataDog)
+
+| Параметр | Значение |
+|----------|----------|
+| Агент | datadog-agent (v7) |
+| Сайт | us5.datadoghq.com |
+| http_check | `http://localhost:8080` (Redmine) |
+| Метрики | CPU, Memory, HTTP check |
+
 ## Подключение к ВМ
 
 ### Через SSH-конфиг (рекомендуется)
 
 ```bash
-ssh yc-vm-1   # первая ВМ (111.88.147.207)
-ssh yc-vm-2   # вторая ВМ (111.88.145.247)
+ssh yc-vm-1   # первая ВМ (111.88.147.9)
+ssh yc-vm-2   # вторая ВМ (111.88.150.198)
 ```
 
 ### Через yc CLI
@@ -103,8 +112,8 @@ yc compute ssh --name compute-vm-2-1-15-ssd-1777883033560 --login mrkuzy9999 -i 
 ### Напрямую через SSH
 
 ```bash
-ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.147.207
-ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.145.247
+ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.147.9
+ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.150.198
 ```
 
 ## Что сделано
@@ -126,6 +135,8 @@ ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.145.247
 - [x] Развёрнут Redmine в Docker-контейнерах на обеих ВМ
 - [x] Настроено подключение Redmine к PostgreSQL кластеру
 - [x] Создан Let's Encrypt сертификат для HTTPS (в процессе валидации)
+- [x] Установлен DataDog агент на обе ВМ
+- [x] Настроен http_check для мониторинга Redmine
 
 ## Следующие шаги
 
@@ -138,8 +149,8 @@ ssh -i ~/.ssh/id_rsa mrkuzy9999@111.88.145.247
 ### Приложение (Redmine)
 ```bash
 # Напрямую на серверах
-curl http://111.88.147.207:8080  # server1
-curl http://111.88.145.247:8080  # server2
+curl http://111.88.147.9:8080    # server1
+curl http://111.88.150.198:8080  # server2
 
 # Через балансировщик
 curl http://111.88.146.158:80
@@ -212,17 +223,18 @@ ansible-playbook deploy.yml -i inventory.ini --vault-password-file ~/.vault_pass
 ### Структура проекта
 
 ```
-├── playbook.yml              # Плейбук подготовки серверов (Docker, pip)
+├── playbook.yml              # Плейбук подготовки серверов (Docker, pip, DataDog)
 ├── deploy.yml                # Плейбук деплоя Redmine
 ├── inventory.ini             # Инвентаризация хостов
 ├── requirements.yml          # Роли и коллекции Ansible Galaxy
 ├── Makefile                  # Команды для деплоя
+├── ansible.cfg               # Ansible config (vault password)
 ├── templates/
 │   └── redmine.env.j2        # Шаблон .env для Redmine
 ├── group_vars/
 │   └── webservers/
 │       ├── vars.yml          # Переменные группы webservers
-│       └── vault.yml         # Зашифрованные переменные (db_password)
+│       └── vault.yml         # Зашифрованные переменные (db_password, datadog_api_key)
 │   └── webservers.yml        # Переменные для группы webservers
 └── README.md                 # Документация
 ```
