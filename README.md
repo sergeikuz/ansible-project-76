@@ -5,11 +5,11 @@
 
 # Ansible Project 76
 
-## Статус проекта
+## Ссылки
 
-Инфраструктура Yandex Cloud создана и настроена. Redmine развёрнут на двух ВМ, балансировщик распределяет трафик. Приложение доступно по домену.
-
-**Приложение:** http://sergei3333.ru
+- **Приложение:** http://sergei3333.ru
+- **Репозиторий:** https://github.com/sergeikuz/ansible-project-76
+- **CI/CD:** https://github.com/sergeikuz/ansible-project-76/actions
 
 ## Инфраструктура (Yandex Cloud)
 
@@ -220,9 +220,9 @@ ansible-playbook deploy.yml -i inventory.ini --vault-password-file ~/.vault_pass
 ├── templates/
 │   └── redmine.env.j2        # Шаблон .env для Redmine
 ├── group_vars/
-│   ├── all/
-│   │   ├── vars.yml          # Общие переменные
-│   │   └── vault.yml         # Зашифрованные переменные (db_password)
+│   └── webservers/
+│       ├── vars.yml          # Переменные группы webservers
+│       └── vault.yml         # Зашифрованные переменные (db_password)
 │   └── webservers.yml        # Переменные для группы webservers
 └── README.md                 # Документация
 ```
