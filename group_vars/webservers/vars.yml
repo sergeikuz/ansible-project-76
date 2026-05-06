@@ -4,3 +4,4 @@ db_port: "6432"
 db_user: user1
 db_name: db1
 db_password: "{{ vault_db_password }}"
+datadog_api_key: "{{ vault_datadog_api_key }}"

@@ -18,3 +18,18 @@
   roles:
     - geerlingguy.pip
     - geerlingguy.docker
+
+- name: Setup DataDog monitoring
+  hosts: webservers
+  become: true
+
+  vars:
+    datadog_checks:
+      http_check:
+        instances:
+          - name: Redmine App
+            url: "http://localhost:{{ redmine_port }}"
+            timeout: 5
+
+  roles:
+    - datadog.datadog
